@@ -4,11 +4,11 @@ import java.time.format.DateTimeFormatter;
 
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
 
+import database.DatabaseConnection;
 import SessionManager.Session;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -36,8 +36,8 @@ public class NewContactDialog {
             String contactName = nameTextField.getText();
             
             // setup the database connection
-            MongoClient mongoClient = new MongoClient("localhost", 27017);
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> userCollection = database.getCollection("User");
             MongoCollection<Document> contactCollection = database.getCollection("User_Contacts");
 

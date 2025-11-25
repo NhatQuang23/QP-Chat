@@ -4,11 +4,10 @@ import java.time.format.DateTimeFormatter;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-
+import database.DatabaseConnection;
 import Collections.Login;
 import Collections.User;
 import javafx.application.Application;
@@ -60,8 +59,8 @@ public class UserRegistrationForm extends Application {
         GridPane.setConstraints(registerButton, 1, 3);
 
 
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
-        MongoDatabase database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
         MongoCollection<Document> userCollection = database.getCollection("User");
         Document highestUser = userCollection.find().sort(new Document("user_id", -1)).first();
         int maxUserId = highestUser != null ? highestUser.getInteger("user_id") : 0;

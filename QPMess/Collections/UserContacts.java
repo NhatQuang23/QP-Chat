@@ -1,9 +1,9 @@
 package Collections;
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import database.DatabaseConnection;
 import SessionManager.Session;
 import javafx.scene.control.ListView;
 
@@ -13,22 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserContacts {
-    // private static User loggedInUser;
-    private static MongoClient mongoClient;
-    private static MongoDatabase database;
-
     
 
     public static ListView<User> getContacts(User loggedInUser) {
-
-        // if(Session.isLoggedIn()) {
-            
-        //     loggedInUser = Session.getLoggedInUser();
-        //     //  System.out.println(loggedInUser.getName());
-        // } 
         
-        mongoClient = new MongoClient("localhost", 27017);
-        database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
 
         ListView<User> contacts = new ListView<>();
 

@@ -12,11 +12,11 @@ import javafx.stage.Modality;
 
 import java.io.File;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
+import database.DatabaseConnection;
 import Collections.User;
 import Collections.Login;
 import SessionManager.Session;
@@ -290,9 +290,9 @@ public class AccountSettingsUI extends Application {
     }
     
     private void loadPasswordFromDatabase() {
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
         try {
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> loginCollection = database.getCollection("Login");
             
             Document query = new Document("user_id", currentUser.getUserId());
@@ -301,15 +301,15 @@ public class AccountSettingsUI extends Application {
             if (loginDoc != null) {
                 currentPasswordFromDB = loginDoc.getString("password");
             }
-        } finally {
-            mongoClient.close();
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể tải mật khẩu: " + e.getMessage());
         }
     }
     
     private void updateUserInDatabase(String name, String email, String phone, String password, String avatarPath) {
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
         try {
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> userCollection = database.getCollection("User");
             
             Document query = new Document("user_id", currentUser.getUserId());
@@ -337,8 +337,8 @@ public class AccountSettingsUI extends Application {
                 loginCollection.updateOne(loginQuery, passwordUpdate);
             }
             
-        } finally {
-            mongoClient.close();
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể cập nhật database: " + e.getMessage());
         }
     }
     

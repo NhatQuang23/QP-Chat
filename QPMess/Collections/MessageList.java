@@ -5,11 +5,11 @@ import java.util.List;
 
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import database.DatabaseConnection;
 import SessionManager.*;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
@@ -35,8 +35,8 @@ public class MessageList {
 
         if(loggedInUser != null && selectedUser != null){
 
-            MongoClient mongoClient = new MongoClient("localhost", 27017);
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
 
             MongoCollection<Document> messageCollection = database.getCollection("Message");  
 

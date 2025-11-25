@@ -8,11 +8,11 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import database.DatabaseConnection;
 import Collections.User;
 import SessionManager.Session;
 
@@ -32,8 +32,8 @@ public class PrivacySettingsUI extends Application {
         gridPane.setHgap(20);
 
         // Fetch the privacy settings from the database
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
-        MongoDatabase database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
         MongoCollection<Document> settingsCollection = database.getCollection("Privacy_Settings");
         FindIterable<Document> settingsQuery = settingsCollection.find(new Document("user_id", loggedInUser.getUserId()));
         Document privacySettings = settingsQuery.first();

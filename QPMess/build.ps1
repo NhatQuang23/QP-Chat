@@ -14,7 +14,7 @@ Write-Host "Compiling Java sources..." -ForegroundColor Cyan
 $commonArgs = @('-cp', '.;MongoDriver\mongo-java-driver-3.12.13.jar', '--module-path', 'FX SDK\lib', '--add-modules', 'javafx.controls,javafx.fxml')
 
 # Compile packages in smaller groups to avoid command-line length limits
-$groups = @('Collections', 'SessionManager', 'Views', 'network')
+$groups = @('database', 'Collections', 'SessionManager', 'Views', 'network')
 foreach ($g in $groups) {
     if (Test-Path $g) {
         $files = Get-ChildItem -Path $g -Recurse -Filter *.java | ForEach-Object { $_.FullName }

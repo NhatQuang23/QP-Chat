@@ -9,12 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
 
+import database.DatabaseConnection;
 import Collections.Group;
 import Collections.MessageList;
 import Collections.User;
@@ -35,6 +35,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -639,12 +640,135 @@ public class ChatApp extends Application {
                 showError("Chưa chọn", "Vui lòng chọn một liên hệ hoặc nhóm để gửi file.");
             }
         });
+        
+        // Button emote
+        Button emoteButton = new Button("😊");
+        emoteButton.getStyleClass().add("button-secondary");
+        emoteButton.setPrefWidth(50);
+        emoteButton.setStyle("-fx-font-size: 18px;");
+        emoteButton.setTooltip(new Tooltip("Chọn emoji"));
+        
+        // Tạo popup chọn emoji
+        final Stage emotePopup = new Stage();
+        emotePopup.initModality(javafx.stage.Modality.NONE);
+        emotePopup.setTitle("Chọn Emoji");
+        
+        VBox emoteContainer = new VBox(10);
+        emoteContainer.setStyle("-fx-background-color: #1a1a1a;");
+        emoteContainer.setPadding(new Insets(10));
+        
+        // Header
+        Label headerLabel = new Label("Cảm xúc");
+        headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+        
+        GridPane emoteGrid = new GridPane();
+        emoteGrid.setPadding(new Insets(10));
+        emoteGrid.setHgap(5);
+        emoteGrid.setVgap(5);
+        emoteGrid.setStyle("-fx-background-color: #2a2a2a;");
+        
+        // Danh sách emoji đầy đủ giống hình mẫu - 8 cột x 6 hàng = 48 emoji
+        String[] emojis = {
+            // Hàng 1
+            "\uD83D\uDE42", "\uD83D\uDE10", "\uD83D\uDE0D", "\uD83D\uDE02", "\uD83D\uDE0E", "\uD83D\uDE2D", "\uD83E\uDD14", "\uD83E\uDD2B",
+            // Hàng 2  
+            "\uD83D\uDE0C", "\uD83D\uDE20", "\uD83E\uDD2F", "\uD83E\uDD2A", "\uD83D\uDE21", "\uD83D\uDE2C", "\uD83E\uDD73", "\uD83D\uDE36",
+            // Hàng 3
+            "\uD83D\uDE0A", "\uD83D\uDE33", "\uD83D\uDE0E", "\uD83D\uDE1C", "\uD83E\uDD13", "\uD83D\uDE12", "\uD83E\uDD10", "\uD83D\uDE2E",
+            // Hàng 4
+            "\uD83E\uDD28", "\uD83D\uDE24", "\uD83E\uDD11", "\uD83E\uDD2E", "\uD83E\uDD24", "\uD83D\uDE06", "\uD83D\uDE0E", "\uD83D\uDE21",
+            // Hàng 5
+            "\uD83E\uDD2D", "\uD83D\uDE1F", "\uD83D\uDE2B", "\uD83D\uDE35", "\uD83E\uDD22", "\uD83D\uDE0F", "\uD83D\uDE36", "\uD83D\uDE44",
+            // Hàng 6
+            "\uD83D\uDE24", "\uD83E\uDD27", "\uD83D\uDE2A", "\uD83D\uDE35\u200D\uD83D\uDCAB", "\uD83E\uDD10", "\uD83D\uDE31", "\uD83D\uDC80", "\uD83E\uDD21"
+        };
+        
+        int row = 0, col = 0;
+        for (String emoji : emojis) {
+            Button emojiBtn = new Button(emoji);
+            emojiBtn.setStyle(
+                "-fx-font-size: 30px; " +
+                "-fx-min-width: 50px; " +
+                "-fx-min-height: 50px; " +
+                "-fx-max-width: 50px; " +
+                "-fx-max-height: 50px; " +
+                "-fx-background-color: transparent; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: transparent; " +
+                "-fx-cursor: hand; " +
+                "-fx-padding: 5;"
+            );
+            
+            // Hover effect - giống như hình mẫu
+            emojiBtn.setOnMouseEntered(ev -> {
+                emojiBtn.setStyle(
+                    "-fx-font-size: 30px; " +
+                    "-fx-min-width: 50px; " +
+                    "-fx-min-height: 50px; " +
+                    "-fx-max-width: 50px; " +
+                    "-fx-max-height: 50px; " +
+                    "-fx-background-color: #3a3a3a; " +  // Sáng lên khi hover
+                    "-fx-background-radius: 8px; " +
+                    "-fx-border-color: transparent; " +
+                    "-fx-cursor: hand; " +
+                    "-fx-padding: 5;"
+                );
+            });
+            
+            emojiBtn.setOnMouseExited(ev -> {
+                emojiBtn.setStyle(
+                    "-fx-font-size: 30px; " +
+                    "-fx-min-width: 50px; " +
+                    "-fx-min-height: 50px; " +
+                    "-fx-max-width: 50px; " +
+                    "-fx-max-height: 50px; " +
+                    "-fx-background-color: transparent; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-border-color: transparent; " +
+                    "-fx-cursor: hand; " +
+                    "-fx-padding: 5;"
+                );
+            });
+            
+            emojiBtn.setOnAction(ev -> {
+                messageInput.setText(messageInput.getText() + emoji);
+                messageInput.requestFocus();
+                messageInput.positionCaret(messageInput.getText().length());
+                emotePopup.hide();
+            });
+            emoteGrid.add(emojiBtn, col, row);
+            col++;
+            if (col > 7) {
+                col = 0;
+                row++;
+            }
+        }
+        
+        emoteContainer.getChildren().addAll(headerLabel, emoteGrid);
+        
+        ScrollPane emoteScroll = new ScrollPane(emoteContainer);
+        emoteScroll.setFitToWidth(true);
+        emoteScroll.setStyle("-fx-background: #1a1a1a; -fx-background-color: #1a1a1a;");
+        Scene emoteScene = new Scene(emoteScroll, 450, 400);
+        emoteScene.getStylesheets().add(getClass().getResource("css/modern.css").toExternalForm());
+        emotePopup.setScene(emoteScene);
+        
+        emoteButton.setOnAction(e -> {
+            if (!emotePopup.isShowing()) {
+                emotePopup.show();
+                // Đặt vị trí popup gần button
+                emotePopup.setX(primaryStage.getX() + 100);
+                emotePopup.setY(primaryStage.getY() + primaryStage.getHeight() - 300);
+            } else {
+                emotePopup.hide();
+            }
+        });
 
 
         // Create bottom bar with modern styling
         bottomBar.setPadding(new Insets(12, 16, 12, 16));
         bottomBar.getStyleClass().add("top-bar");
-        bottomBar.getChildren().addAll(sendFileButton, messageInput, sendButton);
+        bottomBar.getChildren().addAll(sendFileButton, emoteButton, messageInput, sendButton);
         bottomBar.setSpacing(10);
 
         BorderPane wholeChat = new BorderPane();
@@ -995,9 +1119,9 @@ public class ChatApp extends Application {
     }
 
     private int getNextMessageId() {
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
         try {
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> messageCollection = database.getCollection("Message");
             FindIterable<Document> results = messageCollection.find().sort(Sorts.descending("message_id")).limit(1);
             Document latest = results.first();
@@ -1005,8 +1129,9 @@ public class ChatApp extends Application {
                 return latest.getInteger("message_id") + 1;
             }
             return 1;
-        } finally {
-            mongoClient.close();
+        } catch (Exception e) {
+            System.err.println("Error getting next message ID: " + e.getMessage());
+            return 1;
         }
     }
 
@@ -1120,9 +1245,9 @@ public class ChatApp extends Application {
     }
     
     private void storeFileMessageInDatabase(Message message) {
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
         try {
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> messageCollection = database.getCollection("Message");
             
             Document messageDocument = new Document()
@@ -1138,8 +1263,8 @@ public class ChatApp extends Application {
                 .append("file_size", message.getFileSize());
             
             messageCollection.insertOne(messageDocument);
-        } finally {
-            mongoClient.close();
+        } catch (Exception e) {
+            System.err.println("Error storing file message: " + e.getMessage());
         }
     }
     
@@ -1181,8 +1306,8 @@ public class ChatApp extends Application {
         // Replace this with your MongoDB logic to store the message in the Message collection
         // You can use a MongoDB driver or an ORM library like Spring Data MongoDB
         // Example code to store the message:
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
-        MongoDatabase database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
         MongoCollection<Document> messageCollection = database.getCollection("Message");
     
         // Create a new document for the message
@@ -1197,8 +1322,7 @@ public class ChatApp extends Application {
         // Insert the document into the Message collection
         messageCollection.insertOne(messageDocument);
     
-        // Close the MongoDB client connection
-        mongoClient.close();
+        // Note: We don't close the DatabaseConnection as it's a singleton shared across the app
     }
     
     private void displayMessageOptions(Message selectedMessage) {
@@ -1253,9 +1377,9 @@ public class ChatApp extends Application {
         }
         String updatedContent = result.get();
     
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
         try {
-            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            // Sử dụng DatabaseConnection để lấy database
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
             MongoCollection<Document> messageCollection = database.getCollection("Message");
     
             for (Document doc: messageCollection.find()){
@@ -1270,8 +1394,8 @@ public class ChatApp extends Application {
     
                 }
             }
-        } finally {
-            mongoClient.close();
+        } catch (Exception e) {
+            System.err.println("Error editing message: " + e.getMessage());
         }
 
     }
@@ -1281,8 +1405,8 @@ public class ChatApp extends Application {
         // lets just set the conent to ""
         // message.setContent("");
         // Update the message in the database or data source
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
-        MongoDatabase database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
         MongoCollection<Document> messageCollection = database.getCollection("Message");
 
        // lets find that message in our database
@@ -1292,8 +1416,6 @@ public class ChatApp extends Application {
                 messageCollection.deleteOne(doc);
             }
         }
-
-        mongoClient.close();
 
     }
 

@@ -1,9 +1,9 @@
 package Collections;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import database.DatabaseConnection;
 import javafx.scene.control.ListView;
 import org.bson.Document;
 
@@ -11,12 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserGroups {
-    private static MongoClient mongoClient;
-    private static MongoDatabase database;
 
     public static ListView<Group> getGroups(User loggedInUser) {
-        mongoClient = new MongoClient("localhost", 27017);
-        database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
 
         ListView<Group> groups = new ListView<>();
 

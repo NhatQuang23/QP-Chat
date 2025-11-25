@@ -3,11 +3,11 @@
 
 import org.bson.Document;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import database.DatabaseConnection;
 import Collections.User;
 import SessionManager.Session;
 import javafx.application.Application;
@@ -156,8 +156,8 @@ public class Home extends Application {
         // Return true if a matching user document is found, false otherwise
         // You can use a MongoDB driver or an ORM library like Spring Data MongoDB
 
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
-        MongoDatabase database = mongoClient.getDatabase("ChatApp");
+        // Sử dụng DatabaseConnection để lấy database
+        MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
         MongoCollection<Document> userCollection = database.getCollection("Login");
 
         // Query the User collection for the provided username and password
