@@ -2,7 +2,7 @@
 Build script for QPMess (PowerShell)
 Usage: Run this from the project folder or execute .\build.ps1
 #>
-$javac = "C:\Program Files\Java\jdk-21\bin\javac.exe"
+$javac = "C:\Program Files\Eclipse Adoptium\jdk-25.0.1.8-hotspot\bin\javac.exe"
 if (-not (Test-Path $javac)) {
     Write-Host "javac not found at $javac. Update the path in this script." -ForegroundColor Yellow
 }
@@ -32,7 +32,7 @@ foreach ($g in $groups) {
 }
 
 # Compile top-level UI classes
-$top = @('ChatApp.java','Home.java','NewContactDialog.java','PrivacySettingsUI.java','UserRegistrationForm.java')
+$top = @('ChatApp.java','Home.java','NewContactDialog.java','PrivacySettingsUI.java','UserRegistrationForm.java','AccountSettingsUI.java')
 $existingTop = $top | Where-Object { Test-Path $_ }
 if ($existingTop.Count -gt 0) {
     Write-Host "Compiling top-level classes..."

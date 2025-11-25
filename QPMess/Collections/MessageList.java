@@ -67,6 +67,17 @@ public class MessageList {
                 String time = document.getString("timestamp");
                 
                 Message message = new Message(messageId, senderId, receiverId, recipient, content, time);
+                
+                // Load file info if exists
+                String messageType = document.getString("message_type");
+                if (messageType != null) {
+                    message.setMessageType(messageType);
+                    message.setFileName(document.getString("file_name"));
+                    message.setFilePath(document.getString("file_path"));
+                    Long fileSize = document.getLong("file_size");
+                    if (fileSize != null) message.setFileSize(fileSize);
+                }
+                
                 if (recipient.equals("user"))  messages.add(message);
 
             }
@@ -80,6 +91,17 @@ public class MessageList {
                 String time = document.getString("timestamp");
                 
                 Message message = new Message(messageId, senderId, receiverId, recipient, content, time);
+                
+                // Load file info if exists
+                String messageType = document.getString("message_type");
+                if (messageType != null) {
+                    message.setMessageType(messageType);
+                    message.setFileName(document.getString("file_name"));
+                    message.setFilePath(document.getString("file_path"));
+                    Long fileSize = document.getLong("file_size");
+                    if (fileSize != null) message.setFileSize(fileSize);
+                }
+                
                 if (recipient.equals("user"))  messages.add(message);
             }
 

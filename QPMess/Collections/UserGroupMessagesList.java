@@ -35,6 +35,17 @@ public class UserGroupMessagesList {
                 String timestamp = document.getString("timestamp");
 
                 Message message = new Message(messageId, senderId, recipientId, recipientType, content, timestamp);
+                
+                // Load file info if exists
+                String messageType = document.getString("message_type");
+                if (messageType != null) {
+                    message.setMessageType(messageType);
+                    message.setFileName(document.getString("file_name"));
+                    message.setFilePath(document.getString("file_path"));
+                    Long fileSize = document.getLong("file_size");
+                    if (fileSize != null) message.setFileSize(fileSize);
+                }
+                
                 messages.add(message);
             }
         }

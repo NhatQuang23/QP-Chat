@@ -1,0 +1,234 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                     TÓM TẮT TÍNH NĂNG MỚI - QPMess v3.0                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+✅ ĐÃ THÊM 2 TÍNH NĂNG MỚI:
+
+1. 🚪 ĐĂNG XUẤT (LOGOUT)
+2. 📎 GỬI FILE (SEND FILE)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚪 1. CHỨC NĂNG ĐĂNG XUẤT
+
+📍 Vị trí: Button "Đăng xuất" ở góc phải trên, cạnh User Info Box
+
+🎯 Cách dùng:
+   1. Click "Đăng xuất"
+   2. Xác nhận
+   3. → Quay về màn hình login
+
+✨ Tính năng:
+   ✓ Xóa session
+   ✓ Đóng kết nối P2P
+   ✓ Bảo mật thông tin
+   ✓ Dữ liệu không bị mất
+
+═══════════════════════════════════════════════════════════════════════════
+
+📎 2. CHỨC NĂNG GỬI FILE
+
+📍 Vị trí: Button 📎 (kẹp giấy) ở thanh nhập tin nhắn, bên trái
+
+🎯 Cách dùng:
+   
+   GỬI FILE CHO CONTACT (1-1):
+   1. Chọn contact
+   2. Click button 📎
+   3. Chọn file
+   4. → File được gửi ngay!
+
+   GỬI FILE TRONG GROUP:
+   1. Chọn tab "Nhóm"
+   2. Chọn nhóm
+   3. Click button 📎
+   4. Chọn file
+   5. → Tất cả member nhận được!
+
+✨ Hiển thị:
+   ✓ 📎 Icon file
+   ✓ 📝 Tên file
+   ✓ 💾 Button "Tải xuống"
+   ✓ 📏 Kích thước (KB, MB, GB)
+   ✓ ⏰ Thời gian gửi
+
+💾 Tải file:
+   1. Tìm tin nhắn có file
+   2. Click "💾 Tải xuống"
+   3. → File mở bằng app mặc định
+
+═══════════════════════════════════════════════════════════════════════════
+
+📁 LƯU TRỮ FILE
+
+Vị trí: Folder `uploads/` trong thư mục dự án
+Format: `timestamp_filename.ext`
+VD: `1732567890123_document.pdf`
+
+═══════════════════════════════════════════════════════════════════════════
+
+🗄️ DATABASE
+
+Collection Message - Thêm fields mới:
+
+{
+  ... (các field cũ) ...
+  "message_type": "text" | "file" | "image",    ← MỚI!
+  "file_name": "document.pdf",                  ← MỚI!
+  "file_path": "uploads/...",                   ← MỚI!
+  "file_size": 524288                           ← MỚI! (bytes)
+}
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔧 FILES THAY ĐỔI
+
+✓ ChatApp.java                      (~200 dòng)
+✓ Collections/Message.java           (~40 dòng)
+✓ Collections/MessageList.java       (~20 dòng)
+✓ Collections/UserGroupMessagesList.java (~15 dòng)
+
+TỔNG: ~275 dòng code mới
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 CÁCH CHẠY
+
+1. Compile:
+   > cd "D:\LTM(3)\QPMess\QPMess"
+   > .\build.ps1
+
+2. Run:
+   > .\run.ps1
+
+3. Đăng nhập
+
+4. TEST:
+   □ Gửi file cho contact
+   □ Tải file về
+   □ Gửi file trong group
+   □ Test đăng xuất
+   □ Đăng nhập lại
+
+═══════════════════════════════════════════════════════════════════════════
+
+🧪 TESTING CHECKLIST
+
+ĐĂNG XUẤT:
+□ Click "Đăng xuất" → Dialog xuất hiện
+□ Click OK → Quay về login screen
+□ Đăng nhập lại → Thành công
+□ Session mới được tạo
+
+GỬI FILE:
+□ Chọn contact → Click 📎
+□ Chọn file (PDF, Word, Image...) → OK
+□ File xuất hiện trong chat
+□ Tên file hiển thị đúng
+□ Kích thước hiển thị đúng
+□ Click "Tải xuống" → File mở được
+□ Check database: message_type="file"
+□ Check folder uploads/ có file
+
+GỬI FILE TRONG GROUP:
+□ Tab "Nhóm" → Chọn nhóm
+□ Click 📎 → Chọn file
+□ File xuất hiện trong group chat
+□ Tất cả member thấy file
+
+═══════════════════════════════════════════════════════════════════════════
+
+💡 QUICK TIPS
+
+Xem file đã upload:
+> Get-ChildItem uploads\ -Name
+
+Xem file messages trong DB:
+> mongo
+> use ChatApp
+> db.Message.find({"message_type":"file"})
+
+Tạo folder uploads nếu chưa có:
+> New-Item -ItemType Directory -Path uploads
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎨 GIAO DIỆN MỚI
+
+Top Bar:
+[Liên hệ] [Nhóm] [+] [Tin nhắn: X]  ___  [Đăng xuất] [👤 Quang]
+                                      ^^^
+                                    Spacer
+
+Bottom Bar:
+[📎]  [_________________Nhập tin nhắn..._________________]  [Gửi]
+
+File Message:
+┌────────────────────────┐
+│ 📎 File: report.pdf    │
+│ ┌─────────────────┐    │
+│ │ 💾 Tải xuống    │    │
+│ └─────────────────┘    │
+│ 1.2 MB                 │
+│                  22:45 │
+└────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING
+
+❌ "Không thể gửi file"
+   → Tạo folder: New-Item -ItemType Directory -Path uploads
+
+❌ "File không tồn tại"
+   → File bị xóa khỏi folder uploads
+
+❌ "Không thể mở file"
+   → Cài app mở file type đó (PDF reader, Office...)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📚 TÀI LIỆU CHI TIẾT
+
+📄 HUONG_DAN_TINH_NANG_MOI.md
+   → Hướng dẫn đầy đủ, chi tiết
+
+📄 HUONG_DAN_CHAY_DU_AN_CHI_TIET.md
+   → Hướng dẫn compile, run, troubleshoot
+
+📄 THAY_DOI_GIAO_DIEN.md
+   → Giải thích thay đổi giao diện trước
+
+═══════════════════════════════════════════════════════════════════════════
+
+✨ TỔNG KẾT
+
+TRƯỚC ĐÂY:
+✓ Chat P2P
+✓ Group chat
+✓ Quản lý liên hệ
+✓ Tin nhắn dồn bên phải
+✓ Quản lý tài khoản
+
+BÂY GIỜ (v3.0):
+✓ Tất cả tính năng trên
+✓ ĐĂNG XUẤT 🚪
+✓ GỬI FILE 📎
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎉 DONE!
+
+Compile: .\build.ps1
+Run:     .\run.ps1
+
+Enjoy! 🚀
+
+═══════════════════════════════════════════════════════════════════════════
+
+Version: 3.0
+Date: 25/11/2025
+Status: ✅ READY
+
+═══════════════════════════════════════════════════════════════════════════
+

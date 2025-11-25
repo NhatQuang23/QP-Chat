@@ -1,0 +1,248 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    HƯỚNG DẪN CHẠY DỰ ÁN QPMESS NHANH                      ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📍 VỊ TRÍ HIỆN TẠI: D:\LTM(3)\QPMess\QPMess
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ CÁCH CHẠY NHANH NHẤT (3 BƯỚC):
+
+1️⃣  KHỞI ĐỘNG MONGODB
+    PowerShell Administrator:
+    > net start MongoDB
+
+2️⃣  COMPILE DỰ ÁN
+    PowerShell:
+    > cd "D:\LTM(3)\QPMess\QPMess"
+    > .\build.ps1
+
+3️⃣  CHẠY ỨNG DỤNG
+    > .\run.ps1
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔐 ĐĂNG NHẬP TEST:
+    Username: test
+    Password: 123456
+
+    (Nếu chưa có, xem mục TẠO USER TEST bên dưới)
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ KIỂM TRA NHANH:
+
+□ MongoDB đang chạy?
+  > mongo
+  Nếu kết nối OK → ✓
+
+□ Java đã cài?
+  > java -version
+  Nên thấy version 11+ → ✓
+
+□ Folder FX SDK có đúng?
+  > Test-Path "FX SDK\lib"
+  True → ✓
+
+□ File JAR MongoDB có đúng?
+  > Test-Path "MongoDriver\mongo-java-driver-3.12.13.jar"
+  True → ✓
+
+═══════════════════════════════════════════════════════════════════════════
+
+🆕 TẠO USER TEST (Nếu chưa có):
+
+    Mở MongoDB shell:
+    > mongo
+    
+    Chạy các lệnh sau:
+    
+    use ChatApp
+    
+    db.User.insertOne({
+      "user_id": 1,
+      "name": "Test User",
+      "profile_picture": "file:///D:/LTM(3)/QPMess/QPMess/Images/Contact1.jpeg",
+      "bio": "Hello",
+      "preferred_language": "vi",
+      "created_at": "2024-01-01T00:00:00",
+      "email": "test@example.com",
+      "phone": "0123456789"
+    })
+    
+    db.Login.insertOne({
+      "login_id": 1,
+      "user_id": 1,
+      "username": "test",
+      "password": "123456"
+    })
+    
+    Verify:
+    db.User.count()    // Nên > 0
+    db.Login.count()   // Nên > 0
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 SAU KHI ĐĂNG NHẬP THÀNH CÔNG:
+
+✨ TEST TÍNH NĂNG MỚI:
+
+1. TIN NHẮN DỒN BÊN PHẢI
+   • Chọn 1 contact
+   • Gửi tin nhắn
+   • Xem tin nhắn của bạn → PHẢI DỒN SÁT BÊN PHẢI ✓
+
+2. USER INFO BOX
+   • Nhìn góc PHẢI TRÊN cùng
+   • Thấy Avatar + Tên + "● Online" ✓
+
+3. QUẢN LÝ TÀI KHOẢN
+   Cách 1: Click vào User Info Box (avatar + tên)
+   Cách 2: Click button Account ở left panel
+   
+   → Dialog "Quản lý thông tin tài khoản" mở ra
+   
+   Test:
+   □ Đổi tên → Lưu → OK ✓
+   □ Đổi email → Lưu → OK ✓
+   □ Đổi phone → Lưu → OK ✓
+   □ Đổi avatar → Chọn ảnh → Lưu → OK ✓
+   □ Đổi mật khẩu:
+     - Nhập mật khẩu cũ: 123456
+     - Nhập mật khẩu mới: newpass
+     - Confirm: newpass
+     - Lưu → Logout → Login lại với newpass ✓
+
+═══════════════════════════════════════════════════════════════════════════
+
+❌ GẶP LỖI? THỰC HIỆN THEO THỨ TỰ:
+
+1. MongoDB chưa chạy?
+   > net start MongoDB
+
+2. Compile lỗi?
+   > Remove-Item -Recurse *.class
+   > .\build.ps1
+
+3. JavaFX lỗi?
+   • Check: Test-Path "FX SDK\lib"
+   • Nếu False: Download JavaFX SDK và extract vào "FX SDK"
+   • Link: https://gluonhq.com/products/javafx/
+
+4. Java path sai?
+   • Mở build.ps1
+   • Sửa dòng 5: $javac = "ĐƯỜNG_DẪN_JAVA_CỦA_BẠN\javac.exe"
+   • Mở run.ps1
+   • Sửa dòng 5: $java = "ĐƯỜNG_DẪN_JAVA_CỦA_BẠN\java.exe"
+
+5. Vẫn lỗi?
+   • Xem console output
+   • Đọc file: HUONG_DAN_CHAY_DU_AN_CHI_TIET.md
+
+═══════════════════════════════════════════════════════════════════════════
+
+📚 TÀI LIỆU CHI TIẾT:
+
+📄 HUONG_DAN_CHAY_DU_AN_CHI_TIET.md
+   → Hướng dẫn đầy đủ, troubleshooting chi tiết
+
+📄 THAY_DOI_GIAO_DIEN.md
+   → Giải thích các thay đổi code, cấu trúc
+
+📄 COMPILE_AND_RUN.md
+   → Hướng dẫn compile thủ công, test cases
+
+📄 TOM_TAT_THAY_DOI.txt
+   → Tóm tắt ngắn gọn các thay đổi
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 CHECKLIST TRƯỚC KHI CHẠY:
+
+☑ MongoDB service đang chạy
+☑ Folder "FX SDK\lib" có đầy đủ JAR files
+☑ File "MongoDriver\mongo-java-driver-3.12.13.jar" tồn tại
+☑ Java JDK 11+ đã cài đặt
+☑ Đường dẫn Java trong build.ps1 và run.ps1 đúng
+☑ Database ChatApp có collections: User, Login, Message
+☑ Có ít nhất 1 user test trong database
+
+═══════════════════════════════════════════════════════════════════════════
+
+💡 MẸO:
+
+• Compile 1 lần, chạy nhiều lần (không cần compile lại nếu không sửa code)
+• Nếu sửa code, chỉ cần: .\build.ps1 rồi .\run.ps1
+• MongoDB chạy background, không cần tắt sau mỗi lần dùng
+• Avatar path dùng file:/// URI, có thể dùng ảnh bất kỳ trên máy
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔄 QUY TRÌNH DEVELOPMENT:
+
+1. Sửa code trong các file .java
+2. Compile: .\build.ps1
+3. Run: .\run.ps1
+4. Test
+5. Lặp lại từ bước 1
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 CẤU TRÚC DATABASE:
+
+ChatApp/
+├── User          → Thông tin user (name, email, phone, avatar, bio...)
+├── Login         → Credentials (username, password)
+├── Message       → Tin nhắn (P2P và group)
+├── Group         → Thông tin nhóm
+└── Contact       → Danh sách liên hệ
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎨 CÁC TÍNH NĂNG ĐÃ CÓ:
+
+✓ P2P Chat (TCP)
+✓ Group Chat
+✓ Contacts Management
+✓ Message History
+✓ Login/Register
+✓ Privacy Settings
+
+🆕 TÍNH NĂNG MỚI (VỪA THÊM):
+
+✓ Tin nhắn dồn sang phải cho sender
+✓ User Info Box với avatar
+✓ Account Settings UI
+✓ Thay đổi tên, email, phone
+✓ Đổi mật khẩu có validation
+✓ Upload avatar
+✓ CSS theme hiện đại
+
+═══════════════════════════════════════════════════════════════════════════
+
+⏱️ THỜI GIAN DỰ KIẾN:
+
+Compile:   30s - 1 phút
+Chạy:      2-3 giây
+Đăng nhập: Ngay lập tức
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎉 DONE!
+
+Nếu bạn đã làm theo 3 bước đầu và đăng nhập thành công → BẠN ĐÃ CHẠY ĐƯỢC!
+
+Giờ hãy test các tính năng mới:
+1. Gửi tin nhắn → Check tin nhắn dồn bên phải
+2. Click avatar ở góc phải trên → Thử đổi thông tin
+3. Enjoy! 🚀
+
+═══════════════════════════════════════════════════════════════════════════
+
+Version: 2.0
+Date: 25/11/2025
+Status: ✅ READY TO RUN
+
+═══════════════════════════════════════════════════════════════════════════
+
+

@@ -46,6 +46,14 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import network.PeerEndpoint;
 import network.PeerMessage;
@@ -374,6 +382,22 @@ public class ChatApp extends Application {
         userTextBox.getChildren().addAll(nameLabel, statusLabel);
         userInfoBox.getChildren().addAll(userAvatar, userTextBox);
         
+        // Button đăng xuất
+        Button logoutButton = new Button("Đăng xuất");
+        logoutButton.getStyleClass().add("button-secondary");
+        logoutButton.setPrefWidth(100);
+        logoutButton.setOnAction(e -> {
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Xác nhận đăng xuất");
+            confirmAlert.setHeaderText("Bạn có chắc muốn đăng xuất?");
+            confirmAlert.setContentText("Bạn sẽ cần đăng nhập lại để sử dụng ứng dụng.");
+            
+            Optional<ButtonType> result = confirmAlert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                logout(primaryStage);
+            }
+        });
+        
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
@@ -383,7 +407,7 @@ public class ChatApp extends Application {
 
 
         // Add the ToggleButtons to the top bar
-        topBar.getChildren().addAll(contactsButton, groupsButton, communitiesButton, newContactButton, messageCount, spacer, userInfoBox);
+        topBar.getChildren().addAll(contactsButton, groupsButton, communitiesButton, newContactButton, messageCount, spacer, logoutButton, userInfoBox);
         topBar.setSpacing(10);
 
         peerHostField = new TextField("127.0.0.1");
@@ -559,6 +583,21 @@ public class ChatApp extends Application {
         messageInput.getStyleClass().add("text-field");
         HBox.setHgrow(messageInput, Priority.ALWAYS);
         
+        // Button đính kèm file
+        Button attachFileButton = new Button("📎");
+        attachFileButton.getStyleClass().add("button-secondary");
+        attachFileButton.setPrefWidth(50);
+        attachFileButton.setTooltip(new Tooltip("Đính kèm file"));
+        attachFileButton.setOnAction(e -> {
+            if (selectedUserProperty.get() != null) {
+                sendFileToContact(selectedUserProperty.get());
+            } else if (selectedGroupProperty.get() != null) {
+                sendFileToGroup(selectedGroupProperty.get());
+            } else {
+                showError("Chưa chọn", "Vui lòng chọn một liên hệ hoặc nhóm để gửi file.");
+            }
+        });
+        
         // Send on Enter key
         messageInput.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
@@ -584,12 +623,28 @@ public class ChatApp extends Application {
                 showError("Chưa chọn", "Vui lòng chọn một liên hệ hoặc nhóm để gửi tin nhắn.");
             }
         });
+        
+        // Button gửi file
+        Button sendFileButton = new Button("📎");
+        sendFileButton.getStyleClass().add("button-secondary");
+        sendFileButton.setPrefWidth(50);
+        sendFileButton.setStyle("-fx-font-size: 18px;");
+        sendFileButton.setTooltip(new Tooltip("Gửi file"));
+        sendFileButton.setOnAction(e -> {
+            if (selectedUserProperty.get() != null) {
+                sendFile();
+            } else if (selectedGroupProperty.get() != null) {
+                sendFileToGroup(selectedGroupProperty);
+            } else {
+                showError("Chưa chọn", "Vui lòng chọn một liên hệ hoặc nhóm để gửi file.");
+            }
+        });
 
 
         // Create bottom bar with modern styling
         bottomBar.setPadding(new Insets(12, 16, 12, 16));
         bottomBar.getStyleClass().add("top-bar");
-        bottomBar.getChildren().addAll(messageInput, sendButton);
+        bottomBar.getChildren().addAll(sendFileButton, messageInput, sendButton);
         bottomBar.setSpacing(10);
 
         BorderPane wholeChat = new BorderPane();
@@ -746,6 +801,7 @@ public class ChatApp extends Application {
 
     private void addMessageLabel(Message message) {
         boolean isSent = message.getSenderId() == loggedInUser.getUserId();
+        boolean isFile = "file".equals(message.getMessageType());
         
         // Wrapper để tin nhắn gửi đi sát bên phải
         HBox messageWrapper = new HBox();
@@ -765,6 +821,22 @@ public class ChatApp extends Application {
         messageLabel.setWrapText(true);
         messageLabel.setPadding(new Insets(10, 14, 10, 14));
         messageLabel.getStyleClass().add(isSent ? "chat-bubble-sent" : "chat-bubble-received");
+        
+        // If it's a file message, add download button
+        if (isFile && message.getFileName() != null) {
+            Button downloadBtn = new Button("💾 Tải xuống");
+            downloadBtn.getStyleClass().add("button-secondary");
+            downloadBtn.setStyle("-fx-font-size: 11px;");
+            downloadBtn.setOnAction(e -> openFile(message.getFilePath()));
+            
+            Label fileSizeLabel = new Label(formatFileSize(message.getFileSize()));
+            fileSizeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #8696a0;");
+            
+            VBox fileInfo = new VBox(4);
+            fileInfo.getChildren().addAll(downloadBtn, fileSizeLabel);
+            fileInfo.setPadding(new Insets(5, 0, 0, 0));
+            messageContent.getChildren().add(fileInfo);
+        }
         
         // Add timestamp
         String timeStr = formatTimestamp(message.getTimestamp());
@@ -794,6 +866,27 @@ public class ChatApp extends Application {
         });
     }
     
+    private void openFile(String filePath) {
+        if (filePath != null && !filePath.isEmpty()) {
+            try {
+                File file = new File(filePath);
+                if (file.exists()) {
+                    java.awt.Desktop.getDesktop().open(file);
+                } else {
+                    showError("Lỗi", "File không tồn tại: " + filePath);
+                }
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể mở file: " + e.getMessage());
+            }
+        }
+    }
+    
+    private String formatFileSize(long size) {
+        if (size < 1024) return size + " B";
+        int z = (63 - Long.numberOfLeadingZeros(size)) / 10;
+        return String.format("%.1f %sB", (double)size / (1L << (z*10)), " KMGTPE".charAt(z));
+    }
+    
     private String formatTimestamp(String timestamp) {
         try {
             LocalDateTime dateTime = LocalDateTime.parse(timestamp);
@@ -803,6 +896,7 @@ public class ChatApp extends Application {
             return timestamp;
         }
     }
+    
     
     private void filterContacts(String searchText) {
         if (searchText == null || searchText.isEmpty()) {
@@ -931,6 +1025,150 @@ public class ChatApp extends Application {
         }
     }
 
+    private void sendFileToContact(User recipient) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn file để gửi");
+        File selectedFile = fileChooser.showOpenDialog(null);
+        
+        if (selectedFile != null) {
+            try {
+                // Copy file to uploads directory
+                File uploadsDir = new File("uploads");
+                if (!uploadsDir.exists()) {
+                    uploadsDir.mkdirs();
+                }
+                
+                String fileName = selectedFile.getName();
+                File destFile = new File(uploadsDir, System.currentTimeMillis() + "_" + fileName);
+                Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                
+                // Create file message
+                String fileMessage = "📎 File: " + fileName;
+                Message message = persistFileMessage(
+                    loggedInUser.getUserId(), 
+                    recipient.getUserId(), 
+                    "user", 
+                    fileMessage,
+                    fileName,
+                    destFile.getAbsolutePath(),
+                    selectedFile.length()
+                );
+                
+                refreshContactConversation(recipient);
+                
+                showSuccess("Thành công", "Đã gửi file: " + fileName);
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể gửi file: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void sendFileToGroup(Group group) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn file để gửi");
+        File selectedFile = fileChooser.showOpenDialog(null);
+        
+        if (selectedFile != null) {
+            try {
+                // Copy file to uploads directory
+                File uploadsDir = new File("uploads");
+                if (!uploadsDir.exists()) {
+                    uploadsDir.mkdirs();
+                }
+                
+                String fileName = selectedFile.getName();
+                File destFile = new File(uploadsDir, System.currentTimeMillis() + "_" + fileName);
+                Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                
+                // Create file message
+                String fileMessage = "📎 File: " + fileName;
+                Message message = persistFileMessage(
+                    loggedInUser.getUserId(), 
+                    group.getGroupId(), 
+                    "group", 
+                    fileMessage,
+                    fileName,
+                    destFile.getAbsolutePath(),
+                    selectedFile.length()
+                );
+                
+                // Refresh group messages
+                List<Message> updatedMessages = UserGroupMessagesList.getGroupMessages(group);
+                updatedMessages.sort(Comparator.comparing(Message::getMessageId));
+                chatBox.getChildren().clear();
+                for (Message msg : updatedMessages) {
+                    addMessageLabel(msg);
+                }
+                Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
+                
+                showSuccess("Thành công", "Đã gửi file: " + fileName);
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể gửi file: " + e.getMessage());
+            }
+        }
+    }
+    
+    private Message persistFileMessage(int senderId, int receiverId, String recipientType, 
+                                       String content, String fileName, String filePath, long fileSize) {
+        int messageId = getNextMessageId();
+        Message newMessage = new Message(
+            messageId, senderId, receiverId, recipientType, content, 
+            LocalDateTime.now().toString(), "file", fileName, filePath, fileSize
+        );
+        storeFileMessageInDatabase(newMessage);
+        return newMessage;
+    }
+    
+    private void storeFileMessageInDatabase(Message message) {
+        MongoClient mongoClient = new MongoClient("localhost", 27017);
+        try {
+            MongoDatabase database = mongoClient.getDatabase("ChatApp");
+            MongoCollection<Document> messageCollection = database.getCollection("Message");
+            
+            Document messageDocument = new Document()
+                .append("message_id", message.getMessageId())
+                .append("sender_id", message.getSenderId())
+                .append("recipient_id", message.getReceiverId())
+                .append("recipient_type", message.getRecipientType())
+                .append("timestamp", message.getTimestamp())
+                .append("content", message.getContent())
+                .append("message_type", message.getMessageType())
+                .append("file_name", message.getFileName())
+                .append("file_path", message.getFilePath())
+                .append("file_size", message.getFileSize());
+            
+            messageCollection.insertOne(messageDocument);
+        } finally {
+            mongoClient.close();
+        }
+    }
+    
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    
+    private void logout(Stage primaryStage) {
+        // Clear session
+        Session.setLoggedInUser(null);
+        
+        // Close P2P service
+        if (tcpPeerService != null) {
+            try {
+                tcpPeerService.close();
+            } catch (Exception e) {
+                System.err.println("Error closing P2P service: " + e.getMessage());
+            }
+        }
+        
+        // Return to login screen
+        Home loginScreen = new Home();
+        loginScreen.start(primaryStage);
+    }
+    
     @Override
     public void stop() throws Exception {
         super.stop();
@@ -1064,6 +1302,133 @@ public class ChatApp extends Application {
 
 
 
+    
+    // Send file to contact
+    private void sendFile() {
+        User recipient = selectedUserProperty.get();
+        if (recipient == null) {
+            showError("Peer not selected", "Hãy chọn một liên hệ để gửi file.");
+            return;
+        }
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn file để gửi");
+        File selectedFile = fileChooser.showOpenDialog(null);
+        
+        if (selectedFile != null) {
+            try {
+                // Create uploads directory if not exists
+                File uploadsDir = new File("uploads");
+                if (!uploadsDir.exists()) {
+                    uploadsDir.mkdirs();
+                }
+                
+                // Copy file to uploads directory
+                String fileName = selectedFile.getName();
+                File destFile = new File(uploadsDir, System.currentTimeMillis() + "_" + fileName);
+                Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                
+                // Create file message
+                String fileMessage = "📎 File: " + fileName;
+                long fileSize = selectedFile.length();
+                
+                // Store in database
+                int messageId = getNextMessageId();
+                Message fileMsg = new Message(
+                    messageId,
+                    loggedInUser.getUserId(),
+                    recipient.getUserId(),
+                    "user",
+                    fileMessage,
+                    LocalDateTime.now().toString(),
+                    "file",
+                    fileName,
+                    destFile.getAbsolutePath(),
+                    fileSize
+                );
+                storeFileMessageInDatabase(fileMsg);
+                
+                // Refresh conversation
+                refreshContactConversation(recipient);
+                
+                // Show success
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Thành công");
+                alert.setContentText("Đã gửi file: " + fileName);
+                alert.show();
+                
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể gửi file: " + e.getMessage());
+            }
+        }
+    }
+    
+    // Send file to group
+    private void sendFileToGroup(ObjectProperty<Group> selectedGroupProperty) {
+        Group group = selectedGroupProperty.get();
+        if (group == null) {
+            showError("Group not selected", "Hãy chọn một nhóm để gửi file.");
+            return;
+        }
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn file để gửi");
+        File selectedFile = fileChooser.showOpenDialog(null);
+        
+        if (selectedFile != null) {
+            try {
+                // Create uploads directory if not exists
+                File uploadsDir = new File("uploads");
+                if (!uploadsDir.exists()) {
+                    uploadsDir.mkdirs();
+                }
+                
+                // Copy file to uploads directory
+                String fileName = selectedFile.getName();
+                File destFile = new File(uploadsDir, System.currentTimeMillis() + "_" + fileName);
+                Files.copy(selectedFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                
+                // Create file message
+                String fileMessage = "📎 File: " + fileName;
+                long fileSize = selectedFile.length();
+                
+                // Store in database
+                int messageId = getNextMessageId();
+                Message fileMsg = new Message(
+                    messageId,
+                    loggedInUser.getUserId(),
+                    group.getGroupId(),
+                    "group",
+                    fileMessage,
+                    LocalDateTime.now().toString(),
+                    "file",
+                    fileName,
+                    destFile.getAbsolutePath(),
+                    fileSize
+                );
+                storeFileMessageInDatabase(fileMsg);
+                
+                // Refresh group messages
+                List<Message> updatedMessages = UserGroupMessagesList.getGroupMessages(group);
+                updatedMessages.sort(Comparator.comparing(Message::getMessageId));
+                chatBox.getChildren().clear();
+                for (Message message : updatedMessages) {
+                    addMessageLabel(message);
+                }
+                Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
+                
+                // Show success
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Thành công");
+                alert.setContentText("Đã gửi file: " + fileName);
+                alert.show();
+                
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể gửi file: " + e.getMessage());
+            }
+        }
+    }
+    
     public static void main(String[] args) {
         launch(args);
     }
