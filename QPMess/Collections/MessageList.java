@@ -1,7 +1,9 @@
 package Collections;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bson.Document;
 
@@ -24,6 +26,8 @@ public class MessageList {
 
         ListView<User> contactsList = UserContacts.getContacts(loggedInUser);
         ArrayList<Message> messages = new ArrayList<>();
+        // Dùng Set để tránh thêm trùng một message_id (do trước đây có thể đã insert 2 lần)
+        Set<Integer> seenMessageIds = new HashSet<>();
 
         // now we have both the logged in user and the selected user
         // we can get the messages between them from the Message collection
@@ -60,6 +64,9 @@ public class MessageList {
 
             for(Document document : senderMessages){
                 int messageId = document.getInteger("message_id");
+                if (seenMessageIds.contains(messageId)) {
+                    continue;
+                }
                 int senderId = document.getInteger("sender_id");
                 int receiverId = document.getInteger("recipient_id");
                 String content = document.getString("content");
@@ -78,12 +85,18 @@ public class MessageList {
                     if (fileSize != null) message.setFileSize(fileSize);
                 }
                 
-                if (recipient.equals("user"))  messages.add(message);
+                if (recipient.equals("user"))  {
+                    messages.add(message);
+                    seenMessageIds.add(messageId);
+                }
 
             }
 
             for(Document document : receiverMessages){
                 int messageId = document.getInteger("message_id");
+                if (seenMessageIds.contains(messageId)) {
+                    continue;
+                }
                 int senderId = document.getInteger("sender_id");
                 int receiverId = document.getInteger("recipient_id");
                 String content = document.getString("content");
@@ -102,7 +115,10 @@ public class MessageList {
                     if (fileSize != null) message.setFileSize(fileSize);
                 }
                 
-                if (recipient.equals("user"))  messages.add(message);
+                if (recipient.equals("user"))  {
+                    messages.add(message);
+                    seenMessageIds.add(messageId);
+                }
             }
 
             return messages;

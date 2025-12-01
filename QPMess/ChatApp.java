@@ -887,9 +887,11 @@ public class ChatApp extends Application {
 
     private void handleIncomingPeerMessage(PeerMessage peerMessage) {
         Platform.runLater(() -> {
-            // Store the incoming message in database
-            persistAndStoreMessage(peerMessage.getSenderId(), loggedInUser.getUserId(), "user", peerMessage.getBody());
-            
+            // Với MongoDB Atlas dùng chung cho tất cả clients,
+            // message CHỈ được lưu một lần ở phía người gửi.
+            // Ở phía nhận chúng ta chỉ cần reload lại hội thoại từ database
+            // để tránh tạo bản ghi trùng -> hiển thị gấp đôi tin nhắn.
+
             // Refresh conversation if the sender is currently selected
             if (selectedUserProperty.get() != null && selectedUserProperty.get().getUserId() == peerMessage.getSenderId()) {
                 refreshContactConversation(selectedUserProperty.get());
