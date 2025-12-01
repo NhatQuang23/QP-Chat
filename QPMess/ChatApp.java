@@ -318,9 +318,14 @@ public class ChatApp extends Application {
         chatHeaderLabel = new Label("Chọn một cuộc trò chuyện");
         chatHeaderLabel.getStyleClass().add("title-label");
         chatHeaderLabel.setStyle("-fx-font-size: 18px;");
-        
+        Button addMemberButton = new Button("+");
+        addMemberButton.getStyleClass().add("button-secondary");
+        addMemberButton.setPrefWidth(32);
+        addMemberButton.setPrefHeight(32);
+        addMemberButton.setVisible(false);
+
         HBox.setHgrow(chatHeaderLabel, Priority.ALWAYS);
-        chatHeader.getChildren().add(chatHeaderLabel);
+        chatHeader.getChildren().addAll(chatHeaderLabel, addMemberButton);
         
         // Create a HBox for the top bar (chat types)
         HBox topBar = new HBox(10);
@@ -434,12 +439,6 @@ public class ChatApp extends Application {
         peerConfigBar.setAlignment(Pos.CENTER_LEFT);
         peerConfigBar.getChildren().addAll(peerInfoLabel, peerHostField, peerPortField, rememberPeerButton, peerStatusLabel);
 
-        // actionListener for newContactButton
-        newContactButton.setOnAction(e -> {
-            NewContactDialog.display();
-        });
-
-
         contactsButton.setOnAction(event -> {
             if(contactsButton.isSelected()){
                 groupsButton.setSelected(false);
@@ -483,6 +482,20 @@ public class ChatApp extends Application {
         ObjectProperty<Group> selectedGroupProperty = new SimpleObjectProperty<>();
         ListView<Group> groupsList = UserGroups.getGroups(loggedInUser);
         System.out.println(groupsList.getItems().size());
+
+        // actionListener for newContactButton: tạo liên hệ hoặc nhóm tùy tab đang chọn
+        newContactButton.setOnAction(e -> {
+            if (contactsButton.isSelected()) {
+                NewContactDialog.display();
+                // reload lại danh sách liên hệ sau khi thêm
+                contactsList.setItems(UserContacts.getContacts(loggedInUser).getItems());
+            } else if (groupsButton.isSelected()) {
+                NewGroupDialog.display();
+                // reload lại danh sách nhóm sau khi tạo
+                ListView<Group> updatedGroups = UserGroups.getGroups(loggedInUser);
+                groupsList.setItems(updatedGroups.getItems());
+            }
+        });
 
         groupsButton.setOnAction(event -> {
             if (groupsButton.isSelected()) {
@@ -542,6 +555,7 @@ public class ChatApp extends Application {
             if (selectedGroup != null) {
                 selectedGroupProperty.set(selectedGroup);
                 chatHeaderLabel.setText(selectedGroup.getGroupName());
+                addMemberButton.setVisible(true);
         
                 List<Message> messages = UserGroupMessagesList.getGroupMessages(selectedGroupProperty.get());
                 
@@ -556,6 +570,17 @@ public class ChatApp extends Application {
                     chatScrollPane.setVvalue(1.0);
                 });
             }
+        });
+
+        // Nút "+" trong header để thêm thành viên vào nhóm hiện tại
+        addMemberButton.setOnAction(e -> {
+            Group g = selectedGroupProperty.get();
+            if (g == null) {
+                showError("Chưa chọn nhóm", "Hãy chọn một nhóm trước khi thêm thành viên.");
+                return;
+            }
+            AddGroupMembersDialog.display(g);
+            // sau khi thêm, không cần reload ngay hội thoại vì chỉ thay đổi thành viên
         });
         
     
