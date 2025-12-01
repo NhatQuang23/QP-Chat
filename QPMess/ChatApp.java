@@ -315,6 +315,12 @@ public class ChatApp extends Application {
         chatHeader.getStyleClass().add("top-bar");
         chatHeader.setAlignment(Pos.CENTER_LEFT);
         
+        ImageView groupAvatarHeader = new ImageView();
+        groupAvatarHeader.setFitWidth(40);
+        groupAvatarHeader.setFitHeight(40);
+        groupAvatarHeader.setPreserveRatio(true);
+        groupAvatarHeader.setVisible(false);
+
         chatHeaderLabel = new Label("Chọn một cuộc trò chuyện");
         chatHeaderLabel.getStyleClass().add("title-label");
         chatHeaderLabel.setStyle("-fx-font-size: 18px;");
@@ -324,8 +330,14 @@ public class ChatApp extends Application {
         addMemberButton.setPrefHeight(32);
         addMemberButton.setVisible(false);
 
+        Button deleteGroupButton = new Button("...");
+        deleteGroupButton.getStyleClass().add("button-secondary");
+        deleteGroupButton.setPrefWidth(32);
+        deleteGroupButton.setPrefHeight(32);
+        deleteGroupButton.setVisible(false);
+
         HBox.setHgrow(chatHeaderLabel, Priority.ALWAYS);
-        chatHeader.getChildren().addAll(chatHeaderLabel, addMemberButton);
+        chatHeader.getChildren().addAll(groupAvatarHeader, chatHeaderLabel, addMemberButton, deleteGroupButton);
         
         // Create a HBox for the top bar (chat types)
         HBox topBar = new HBox(10);
@@ -336,10 +348,8 @@ public class ChatApp extends Application {
         // Create ToggleButtons for chat types with modern styling
         ToggleButton contactsButton = new ToggleButton("Liên hệ");
         ToggleButton groupsButton = new ToggleButton("Nhóm");
-        ToggleButton communitiesButton = new ToggleButton("Cộng đồng");
         contactsButton.getStyleClass().add("toggle-button");
         groupsButton.getStyleClass().add("toggle-button");
-        communitiesButton.getStyleClass().add("toggle-button");
         contactsButton.setSelected(true);
 
         Button newContactButton = new Button("+");
@@ -412,8 +422,8 @@ public class ChatApp extends Application {
 
 
 
-        // Add the ToggleButtons to the top bar
-        topBar.getChildren().addAll(contactsButton, groupsButton, communitiesButton, newContactButton, messageCount, spacer, logoutButton, userInfoBox);
+        // Add the ToggleButtons to the top bar (đã bỏ nút Cộng đồng)
+        topBar.getChildren().addAll(contactsButton, groupsButton, newContactButton, messageCount, spacer, logoutButton, userInfoBox);
         topBar.setSpacing(10);
 
         peerHostField = new TextField("127.0.0.1");
@@ -442,7 +452,6 @@ public class ChatApp extends Application {
         contactsButton.setOnAction(event -> {
             if(contactsButton.isSelected()){
                 groupsButton.setSelected(false);
-                communitiesButton.setSelected(false);
                 sidePanelContent.getChildren().setAll(searchField, contactsList);
                 sidePanelContent.setPadding(new Insets(12));
                 VBox.setVgrow(contactsList, Priority.ALWAYS);
@@ -500,7 +509,6 @@ public class ChatApp extends Application {
         groupsButton.setOnAction(event -> {
             if (groupsButton.isSelected()) {
                 contactsButton.setSelected(false);
-                communitiesButton.setSelected(false);
                 
                 groupsList.setCellFactory(lv -> new ListCell<Group>() {
                     private final HBox hbox = new HBox(12);
@@ -556,6 +564,13 @@ public class ChatApp extends Application {
                 selectedGroupProperty.set(selectedGroup);
                 chatHeaderLabel.setText(selectedGroup.getGroupName());
                 addMemberButton.setVisible(true);
+                groupAvatarHeader.setVisible(true);
+                deleteGroupButton.setVisible(selectedGroup.getAdminId() == loggedInUser.getUserId());
+                try {
+                    if (selectedGroup.getProfile_picture() != null && !selectedGroup.getProfile_picture().isEmpty()) {
+                        groupAvatarHeader.setImage(new Image(selectedGroup.getProfile_picture()));
+                    }
+                } catch (Exception ignore) {}
         
                 List<Message> messages = UserGroupMessagesList.getGroupMessages(selectedGroupProperty.get());
                 
@@ -581,6 +596,57 @@ public class ChatApp extends Application {
             }
             AddGroupMembersDialog.display(g);
             // sau khi thêm, không cần reload ngay hội thoại vì chỉ thay đổi thành viên
+        });
+
+        // Nút "..." nhóm (chỉ admin mới thấy) - đổi avatar / xóa nhóm
+        deleteGroupButton.setOnAction(e -> {
+            Group g = selectedGroupProperty.get();
+            if (g == null) {
+                showError("Chưa chọn nhóm", "Hãy chọn một nhóm để thao tác.");
+                return;
+            }
+            if (g.getAdminId() != loggedInUser.getUserId()) {
+                showError("Không có quyền", "Chỉ quản trị viên nhóm mới được quyền chỉnh sửa nhóm.");
+                return;
+            }
+            Alert menu = new Alert(Alert.AlertType.CONFIRMATION);
+            menu.setTitle("Tùy chọn nhóm");
+            menu.setHeaderText("Nhóm: " + g.getGroupName());
+            menu.setContentText("Chọn hành động:");
+
+            ButtonType changeAvatar = new ButtonType("Đổi ảnh đại diện");
+            ButtonType deleteGroupType = new ButtonType("Xóa nhóm");
+            ButtonType cancel = new ButtonType("Hủy", ButtonBar.ButtonData.CANCEL_CLOSE);
+            menu.getButtonTypes().setAll(changeAvatar, deleteGroupType, cancel);
+
+            Optional<ButtonType> result = menu.showAndWait();
+            if (result.isEmpty() || result.get() == cancel) {
+                return;
+            }
+
+            if (result.get() == changeAvatar) {
+                changeGroupAvatar(g, groupAvatarHeader, groupsList);
+            } else if (result.get() == deleteGroupType) {
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Xóa nhóm");
+                confirm.setHeaderText("Bạn có chắc muốn xóa nhóm \"" + g.getGroupName() + "\"?");
+                confirm.setContentText("Tất cả tin nhắn và thành viên của nhóm sẽ bị xóa.");
+                Optional<ButtonType> res2 = confirm.showAndWait();
+                if (res2.isPresent() && res2.get() == ButtonType.OK) {
+                    deleteGroup(g);
+                    // refresh danh sách nhóm
+                    ListView<Group> updated = UserGroups.getGroups(loggedInUser);
+                    groupsList.setItems(updated.getItems());
+                    // reset UI
+                    selectedGroupProperty.set(null);
+                    chatHeaderLabel.setText("Chọn một cuộc trò chuyện");
+                    addMemberButton.setVisible(false);
+                    deleteGroupButton.setVisible(false);
+                    groupAvatarHeader.setVisible(false);
+                    chatBox.getChildren().clear();
+                    messageCount.setText("Tin nhắn: 0");
+                }
+            }
         });
         
     
@@ -953,6 +1019,7 @@ public class ChatApp extends Application {
     private void addMessageLabel(Message message) {
         boolean isSent = message.getSenderId() == loggedInUser.getUserId();
         boolean isFile = "file".equals(message.getMessageType());
+        boolean isGroupMessage = "group".equalsIgnoreCase(message.getRecipientType());
         
         // Wrapper để tin nhắn gửi đi sát bên phải
         HBox messageWrapper = new HBox();
@@ -961,6 +1028,28 @@ public class ChatApp extends Application {
         
         VBox messageContainer = new VBox(4);
         messageContainer.setMaxWidth(400);
+        
+        // Với tin nhắn nhóm, hiển thị tên người gửi ở trên bong bóng
+        if (isGroupMessage) {
+            String senderName = "Bạn";
+            if (!isSent) {
+                try {
+                    MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
+                    MongoCollection<Document> userCol = database.getCollection("User");
+                    Document userDoc = userCol.find(new Document("user_id", message.getSenderId())).first();
+                    if (userDoc != null) {
+                        senderName = userDoc.getString("name");
+                    } else {
+                        senderName = "User " + message.getSenderId();
+                    }
+                } catch (Exception ignored) {}
+            }
+            Label senderLabel = new Label(senderName);
+            senderLabel.getStyleClass().add("muted-label");
+            senderLabel.setStyle("-fx-font-size: 11px;");
+            senderLabel.setAlignment(isSent ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+            messageContainer.getChildren().add(senderLabel);
+        }
         
         HBox messageBubble = new HBox(8);
         messageBubble.setAlignment(isSent ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
@@ -1257,6 +1346,70 @@ public class ChatApp extends Application {
             } catch (Exception e) {
                 showError("Lỗi", "Không thể gửi file: " + e.getMessage());
             }
+        }
+    }
+
+    private void changeGroupAvatar(Group group, ImageView groupAvatarHeader, ListView<Group> groupsList) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Chọn ảnh đại diện mới cho nhóm");
+        chooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Ảnh", "*.png", "*.jpg", "*.jpeg")
+        );
+        File file = chooser.showOpenDialog(null);
+        if (file == null) {
+            return;
+        }
+        try {
+            File avatarsDir = new File("group_avatars");
+            if (!avatarsDir.exists()) {
+                avatarsDir.mkdirs();
+            }
+            File dest = new File(avatarsDir, System.currentTimeMillis() + "_" + file.getName());
+            Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
+            MongoCollection<Document> groupsCol = database.getCollection("Groups");
+            groupsCol.updateOne(
+                new Document("group_id", group.getGroupId()),
+                new Document("$set", new Document("profile_picture", dest.getAbsolutePath()))
+            );
+
+            group.setProfile_picture(dest.getAbsolutePath());
+            if (groupAvatarHeader != null) {
+                groupAvatarHeader.setImage(new Image(group.getProfile_picture()));
+            }
+            if (groupsList != null) {
+                groupsList.refresh();
+            }
+            showSuccess("Thành công", "Đã cập nhật ảnh đại diện nhóm.");
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể cập nhật ảnh đại diện: " + e.getMessage());
+        }
+    }
+
+    private void deleteGroup(Group group) {
+        try {
+            MongoDatabase database = DatabaseConnection.getInstance().getDatabase();
+            if (database == null) {
+                showError("Lỗi", "Không kết nối được cơ sở dữ liệu.");
+                return;
+            }
+            MongoCollection<Document> groupsCol = database.getCollection("Groups");
+            MongoCollection<Document> groupMembersCol = database.getCollection("Group_Members");
+            MongoCollection<Document> messagesCol = database.getCollection("Message");
+
+            // Xóa nhóm
+            groupsCol.deleteOne(new Document("group_id", group.getGroupId()));
+            // Xóa thành viên nhóm
+            groupMembersCol.deleteMany(new Document("group_id", group.getGroupId()));
+            // Xóa tin nhắn nhóm
+            Document filterMessages = new Document("recipient_type", "group")
+                    .append("recipient_id", group.getGroupId());
+            messagesCol.deleteMany(filterMessages);
+
+            showSuccess("Thành công", "Đã xóa nhóm \"" + group.getGroupName() + "\".");
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể xóa nhóm: " + e.getMessage());
         }
     }
     

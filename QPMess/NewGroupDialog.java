@@ -25,6 +25,10 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 public class NewGroupDialog {
 
@@ -42,6 +46,39 @@ public class NewGroupDialog {
         TextArea descArea = new TextArea();
         descArea.setPromptText("Mô tả ngắn về nhóm (không bắt buộc)");
         descArea.setPrefRowCount(3);
+
+        // Chọn ảnh đại diện nhóm
+        Label avatarLabel = new Label("Ảnh đại diện:");
+        Label avatarPathLabel = new Label("Chưa chọn ảnh");
+        Button chooseAvatarButton = new Button("Chọn ảnh...");
+        final String[] avatarPathHolder = { "" };
+        chooseAvatarButton.setOnAction(ev -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Chọn ảnh đại diện nhóm");
+            chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Ảnh", "*.png", "*.jpg", "*.jpeg")
+            );
+            File file = chooser.showOpenDialog(null);
+            if (file != null) {
+                try {
+                    File avatarsDir = new File("group_avatars");
+                    if (!avatarsDir.exists()) {
+                        avatarsDir.mkdirs();
+                    }
+                    File dest = new File(avatarsDir, System.currentTimeMillis() + "_" + file.getName());
+                    Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    avatarPathHolder[0] = dest.getAbsolutePath();
+                    avatarPathLabel.setText(file.getName());
+                } catch (Exception ex) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText("Không thể lưu ảnh đại diện");
+                    alert.setContentText(ex.getMessage());
+                    alert.showAndWait();
+                }
+            }
+        });
+        HBox avatarRow = new HBox(10, chooseAvatarButton, avatarPathLabel);
 
         // Danh sách liên hệ để chọn thành viên nhóm
         Label membersLabel = new Label("Thành viên:");
@@ -117,7 +154,7 @@ public class NewGroupDialog {
                         .append("group_name", groupName)
                         .append("description", description)
                         .append("admin", Session.getLoggedInUser().getUserId())
-                        .append("profile_picture", "");
+                        .append("profile_picture", avatarPathHolder[0] == null ? "" : avatarPathHolder[0]);
                 groupsCollection.insertOne(newGroup);
 
                 // Thêm người tạo vào bảng Group_Members
@@ -162,9 +199,11 @@ public class NewGroupDialog {
         grid.add(nameField, 1, 0);
         grid.add(descLabel, 0, 1);
         grid.add(descArea, 1, 1);
-        grid.add(membersLabel, 0, 2);
-        grid.add(contactsView, 1, 2);
-        grid.add(createButton, 1, 3);
+        grid.add(avatarLabel, 0, 2);
+        grid.add(avatarRow, 1, 2);
+        grid.add(membersLabel, 0, 3);
+        grid.add(contactsView, 1, 3);
+        grid.add(createButton, 1, 4);
 
         grid.setAlignment(Pos.CENTER);
 
